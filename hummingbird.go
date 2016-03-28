@@ -61,7 +61,7 @@ func (ha HummingbirdAnime) RewatchedTimes() int {
 
 type HummingbirdAnimeList struct {
 	anime   map[int]HummingbirdAnime
-	changes []Change
+	changes []*Change
 }
 
 func (hal HummingbirdAnimeList) Type() int {
@@ -116,7 +116,7 @@ func (hal *HummingbirdAnimeList) Add(anime Anime) error {
 			title: anime.Title(),
 		},
 	}
-	change := Change{
+	change := &Change{
 		LIST_ADD,
 		[]interface{}{},
 	}
@@ -133,16 +133,13 @@ func (hal *HummingbirdAnimeList) Edit(anime Anime) error {
 
 	oldAnime := hal.anime[id]
 
-	change := Change{
+	change := &Change{
 		LIST_EDIT,
 		[]interface{}{},
 	}
-	// TODO(DarinM223) calculate diff and add to change list
-	if oldAnime.Title() != anime.Title() {
-		change.Args = append(change.Args, "title")
-		change.Args = append(change.Args, oldAnime.Title())
-		change.Args = append(change.Args, anime.Title())
-	}
+	change.Args = append(change.Args, id)
+	change.PopulateDiff(oldAnime, anime)
+
 	hal.changes = append(hal.changes, change)
 	return nil
 }
@@ -158,14 +155,22 @@ func (hal *HummingbirdAnimeList) Remove(anime Anime) error {
 	}
 	delete(hal.anime, id)
 
-	change := Change{
+	change := &Change{
 		LIST_REMOVE,
 		[]interface{}{},
 	}
 	change.Args = append(change.Args, anime)
+	hal.changes = append(hal.changes, change)
 	return nil
 }
 
 func (hal HummingbirdAnimeList) Push() {
+	// TODO(DarinM223): implement this
+}
+
+type HummingbirdAPI struct {
+}
+
+func (api *HummingbirdAPI) ApplyChange(change *Change) {
 	// TODO(DarinM223): implement this
 }
