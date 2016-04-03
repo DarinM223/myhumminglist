@@ -1,12 +1,19 @@
 package main
 
-import "errors"
+import (
+	"errors"
+	"fmt"
+	"net/http"
+	"net/url"
+	"strings"
+)
 
 // HummingbirdAnime represents the JSON data of a Hummingbird library entry
 type HummingbirdAnime struct {
 	episodesWatched int                  `json:"episodes_watched"`
 	status          string               `json:"status"`
 	rewatchedTimes  int                  `json:"rewatched_times"`
+	rewatching      bool                 `json:"rewatching"`
 	data            HummingbirdAnimeData `json:"anime"`
 }
 
@@ -21,9 +28,9 @@ type HummingbirdAnimeData struct {
 
 func (ha HummingbirdAnime) ID(listType int) (int, error) {
 	switch listType {
-	case HUMMINGBIRD:
+	case Hummingbird:
 		return ha.data.id, nil
-	case MYANIMELIST:
+	case MyAnimeList:
 		return ha.data.malID, nil
 	default:
 		return -1, errors.New("Invalid anime list type")
@@ -37,15 +44,15 @@ func (ha HummingbirdAnime) Title() string {
 func (ha HummingbirdAnime) Status() (int, error) {
 	switch ha.status {
 	case "currently-watching":
-		return STATUS_WATCHING, nil
+		return StatusWatching, nil
 	case "plan-to-watch":
-		return STATUS_PLANTOWATCH, nil
+		return StatusPlanToWatch, nil
 	case "completed":
-		return STATUS_COMPLETED, nil
+		return StatusCompleted, nil
 	case "on-hold":
-		return STATUS_ONHOLD, nil
+		return StatusOnHold, nil
 	case "dropped":
-		return STATUS_DROPPED, nil
+		return StatusDropped, nil
 	default:
 		return -1, errors.New("Invalid status")
 	}
@@ -59,39 +66,55 @@ func (ha HummingbirdAnime) RewatchedTimes() int {
 	return ha.rewatchedTimes
 }
 
-type HummingbirdAnimeList struct {
-	anime   map[int]HummingbirdAnime
-	changes []*Change
-}
-
-func (hal HummingbirdAnimeList) Type() int {
-	return HUMMINGBIRD
+func (ha HummingbirdAnime) Rewatching() bool {
+	return ha.rewatching
 }
 
 func StatusToHummingbirdString(status int) (string, error) {
 	switch status {
-	case STATUS_WATCHING:
+	case StatusWatching:
 		return "currently-watching", nil
-	case STATUS_PLANTOWATCH:
+	case StatusPlanToWatch:
 		return "plan-to-watch", nil
-	case STATUS_COMPLETED:
+	case StatusCompleted:
 		return "completed", nil
-	case STATUS_ONHOLD:
+	case StatusOnHold:
 		return "on-hold", nil
-	case STATUS_DROPPED:
+	case StatusDropped:
 		return "dropped", nil
 	default:
 		return "", errors.New("Invalid status")
 	}
 }
 
-func (hal *HummingbirdAnimeList) Add(anime Anime) error {
+const (
+	hummingbirdAddURL    = "https://hummingbird.me/api/v1/libraries/%d"
+	hummingbirdEditURL   = "https://hummingbird.me/api/v1/libraries/%d"
+	hummingbirdDeleteURL = "https://hummingbird.me/api/v1/libraries/%d/remove"
+)
+
+type HummingbirdAnimeList struct {
+	anime       map[int]HummingbirdAnime
+	changes     []*Change
+	pastChanges []*Change
+	authToken   string
+}
+
+func (hal HummingbirdAnimeList) Type() int {
+	return Hummingbird
+}
+
+func (hal HummingbirdAnimeList) AuthToken() string {
+	return hal.authToken
+}
+
+func (hal *HummingbirdAnimeList) Add(anime HummingbirdAnime) error {
 	id, err := anime.ID(hal.Type())
 	if err != nil {
 		return err
 	}
 
-	malID, err := anime.ID(MYANIMELIST)
+	malID, err := anime.ID(MyAnimeList)
 	if err != nil {
 		return err
 	}
@@ -117,10 +140,10 @@ func (hal *HummingbirdAnimeList) Add(anime Anime) error {
 		},
 	}
 	change := &Change{
-		LIST_ADD,
+		ListAdd,
 		[]interface{}{},
 	}
-	change.Args = append(change.Args, id)
+	change.Args = append(change.Args, anime)
 	hal.changes = append(hal.changes, change)
 	return nil
 }
@@ -134,7 +157,7 @@ func (hal *HummingbirdAnimeList) Edit(anime Anime) error {
 	oldAnime := hal.anime[id]
 
 	change := &Change{
-		LIST_EDIT,
+		ListEdit,
 		[]interface{}{},
 	}
 	change.Args = append(change.Args, id)
@@ -156,7 +179,7 @@ func (hal *HummingbirdAnimeList) Remove(anime Anime) error {
 	delete(hal.anime, id)
 
 	change := &Change{
-		LIST_REMOVE,
+		ListRemove,
 		[]interface{}{},
 	}
 	change.Args = append(change.Args, anime)
@@ -164,13 +187,106 @@ func (hal *HummingbirdAnimeList) Remove(anime Anime) error {
 	return nil
 }
 
-func (hal HummingbirdAnimeList) Push() {
-	// TODO(DarinM223): implement this
+func (hal *HummingbirdAnimeList) Push() error {
+	changeRequests := make([]*http.Request, len(hal.changes))
+	for _, change := range hal.changes {
+		req, err := hal.GenerateChange(change)
+		if err != nil {
+			return err
+		}
+
+		changeRequests = append(changeRequests, req)
+	}
+
+	// TODO(DarinM223): send the change requests asynchronously and block
+
+	hal.pastChanges = append(hal.pastChanges, hal.changes...)
+	hal.changes = []*Change{}
+	return nil
 }
 
-type HummingbirdAPI struct {
+// GenerateChange returns a HTTP request that applies the change
+func (hal *HummingbirdAnimeList) GenerateChange(change *Change) (*http.Request, error) {
+	switch change.ChangeType {
+	case ListAdd:
+		anime := change.Args[0].(Anime)
+
+		animeID, err := anime.ID(Hummingbird)
+		if err != nil {
+			return nil, err
+		}
+
+		status, err := anime.Status()
+		if err != nil {
+			return nil, err
+		}
+
+		statusStr, err := StatusToHummingbirdString(status)
+		if err != nil {
+			return nil, err
+		}
+
+		form := url.Values{}
+		form.Add("auth_token", hal.AuthToken())
+		form.Add("status", statusStr)
+		form.Add("rewatching", fmt.Sprintf("%t", anime.Rewatching()))
+		form.Add("rewatched_times", fmt.Sprintf("%d", anime.RewatchedTimes()))
+		form.Add("episodes_watched", fmt.Sprintf("%d", anime.EpisodesWatched()))
+
+		req, err := http.NewRequest("POST", fmt.Sprintf(hummingbirdAddURL, animeID), strings.NewReader(form.Encode()))
+		if err != nil {
+			return nil, err
+		}
+		return req, nil
+	case ListEdit:
+		editID := change.Args[0].(int)
+		form := url.Values{}
+		form.Add("auth_token", hal.AuthToken())
+		for i := 1; i < len(change.Args); i += 3 {
+			title := change.Args[i].(string)
+			new := change.Args[i+2]
+
+			switch t := new.(type) {
+			case int:
+				form.Add(title, fmt.Sprintf("%d", t))
+			case bool:
+				form.Add(title, fmt.Sprintf("%t", t))
+			case string:
+				form.Add(title, t)
+			default:
+				return nil, errors.New("Change type not found")
+			}
+		}
+		req, err := http.NewRequest("POST", fmt.Sprintf(hummingbirdEditURL, editID), strings.NewReader(form.Encode()))
+		if err != nil {
+			return nil, err
+		}
+
+		return req, nil
+	case ListRemove:
+		anime := change.Args[0].(Anime)
+
+		animeID, err := anime.ID(Hummingbird)
+		if err != nil {
+			return nil, err
+		}
+
+		form := url.Values{}
+		form.Add("auth_token", hal.AuthToken())
+
+		req, err := http.NewRequest("POST", fmt.Sprintf(hummingbirdDeleteURL, animeID), strings.NewReader(form.Encode()))
+		if err != nil {
+			return nil, err
+		}
+
+		return req, nil
+	default:
+		return nil, errors.New("Invalid change type")
+	}
 }
 
-func (api *HummingbirdAPI) ApplyChange(change *Change) {
+// GenerateUndo returns a HTTP request that undos the change
+func (hal *HummingbirdAnimeList) GenerateUndo(change *Change) (*http.Request, error) {
 	// TODO(DarinM223): implement this
+	return nil, nil
 }
