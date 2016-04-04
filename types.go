@@ -30,12 +30,10 @@ func (change *Change) PopulateDiff(oldAnime Anime, anime Anime) {
 		change.Args = append(change.Args, oldAnime.Title())
 		change.Args = append(change.Args, anime.Title())
 	}
-	oldStatus, err := oldAnime.Status()
-	newStatus, err2 := anime.Status()
-	if err == nil && err2 == nil && oldStatus != newStatus {
+	if oldAnime.Status() != anime.Status() {
 		change.Args = append(change.Args, "status")
-		change.Args = append(change.Args, oldStatus)
-		change.Args = append(change.Args, newStatus)
+		change.Args = append(change.Args, oldAnime.Status())
+		change.Args = append(change.Args, anime.Status())
 	}
 	if oldAnime.EpisodesWatched() != anime.EpisodesWatched() {
 		change.Args = append(change.Args, "episodes_watched")
@@ -49,17 +47,70 @@ func (change *Change) PopulateDiff(oldAnime Anime, anime Anime) {
 	}
 }
 
-// MergeChanges takes a list of changes and returns one merged change
-// with all of the changes combined
-func MergeChanges(changes []*Change) *Change {
-	// TODO(DarinM223): implement this
-	return nil
+// MergeChanges takes a list of changes and returns a
+// smaller list with similar changes merged
+func MergeChanges(changes []*Change, listType int) []*Change {
+	addMap := make(map[int]Anime)
+	editMap := make(map[int]*Change)
+
+	for _, change := range changes {
+		switch change.ChangeType {
+		case ListAdd:
+			anime := change.Args[0].(Anime)
+			animeID := anime.ID().Get(listType)
+
+			addMap[animeID] = anime
+		case ListEdit:
+			editID := change.Args[0].(AnimeID).Get(listType)
+
+			if _, ok := addMap[editID]; ok {
+				// TODO(DarinM223): apply edit changes to added anime
+			} else {
+				editMap[editID] = change
+			}
+		case ListRemove:
+			animeID := change.Args[0].(Anime).ID().Get(listType)
+			delete(addMap, animeID)
+			delete(editMap, animeID)
+		}
+	}
+
+	var newChanges []*Change
+	for _, anime := range addMap {
+		change := &Change{
+			ListAdd,
+			[]interface{}{},
+		}
+		change.Args = append(change.Args, anime)
+		newChanges = append(newChanges, change)
+	}
+	for _, change := range editMap {
+		newChanges = append(newChanges, change)
+	}
+
+	return newChanges
+}
+
+type AnimeID struct {
+	Hummingbird int
+	MyAnimeList int
+}
+
+func (id AnimeID) Get(listType int) int {
+	switch listType {
+	case Hummingbird:
+		return id.Hummingbird
+	case MyAnimeList:
+		return id.MyAnimeList
+	default:
+		panic("Invalid anime list")
+	}
 }
 
 type Anime interface {
-	ID(listType int) (int, error)
+	ID() AnimeID
 	Title() string
-	Status() (int, error)
+	Status() int
 	EpisodesWatched() int
 	RewatchedTimes() int
 	Rewatching() bool
