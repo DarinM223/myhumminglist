@@ -188,20 +188,42 @@ func (hal *HummingbirdAnimeList) Remove(anime Anime) error {
 }
 
 func (hal *HummingbirdAnimeList) Push() error {
-	changeRequests := make([]*http.Request, len(hal.changes))
-	for _, change := range hal.changes {
-		req, err := hal.GenerateChange(change)
-		if err != nil {
-			return err
-		}
+	mergedChange := MergeChanges(hal.changes)
 
-		changeRequests = append(changeRequests, req)
+	changeRequest, err := hal.GenerateChange(mergedChange)
+	if err != nil {
+		return err
 	}
 
-	// TODO(DarinM223): send the change requests asynchronously and block
+	client := &http.Client{}
+	_, err = client.Do(changeRequest)
+	if err != nil {
+		return err
+	}
 
-	hal.pastChanges = append(hal.pastChanges, hal.changes...)
+	hal.pastChanges = append(hal.pastChanges, mergedChange)
 	hal.changes = []*Change{}
+	return nil
+}
+
+func (hal *HummingbirdAnimeList) Undo() error {
+	if len(hal.changes) <= 0 {
+		return errors.New("Cannot undo from empty changelist")
+	}
+
+	change := hal.changes[len(hal.changes)-1]
+	undoRequest, err := hal.GenerateUndo(change)
+	if err != nil {
+		return err
+	}
+
+	client := &http.Client{}
+	_, err = client.Do(undoRequest)
+	if err != nil {
+		return err
+	}
+
+	hal.changes = hal.changes[:len(hal.changes)-1]
 	return nil
 }
 
@@ -237,6 +259,7 @@ func (hal *HummingbirdAnimeList) GenerateChange(change *Change) (*http.Request, 
 		if err != nil {
 			return nil, err
 		}
+
 		return req, nil
 	case ListEdit:
 		editID := change.Args[0].(int)
@@ -287,6 +310,80 @@ func (hal *HummingbirdAnimeList) GenerateChange(change *Change) (*http.Request, 
 
 // GenerateUndo returns a HTTP request that undos the change
 func (hal *HummingbirdAnimeList) GenerateUndo(change *Change) (*http.Request, error) {
-	// TODO(DarinM223): implement this
-	return nil, nil
+	switch change.ChangeType {
+	case ListAdd:
+		anime := change.Args[0].(Anime)
+
+		animeID, err := anime.ID(Hummingbird)
+		if err != nil {
+			return nil, err
+		}
+
+		form := url.Values{}
+		form.Add("auth_token", hal.AuthToken())
+
+		req, err := http.NewRequest("POST", fmt.Sprintf(hummingbirdDeleteURL, animeID), strings.NewReader(form.Encode()))
+		if err != nil {
+			return nil, err
+		}
+
+		return req, nil
+	case ListEdit:
+		editID := change.Args[0].(int)
+		form := url.Values{}
+		form.Add("auth_token", hal.AuthToken())
+		for i := 1; i < len(change.Args); i += 3 {
+			title := change.Args[i].(string)
+			old := change.Args[i+1]
+
+			switch t := old.(type) {
+			case int:
+				form.Add(title, fmt.Sprintf("%d", t))
+			case bool:
+				form.Add(title, fmt.Sprintf("%t", t))
+			case string:
+				form.Add(title, t)
+			default:
+				return nil, errors.New("Change type not found")
+			}
+		}
+		req, err := http.NewRequest("POST", fmt.Sprintf(hummingbirdEditURL, editID), strings.NewReader(form.Encode()))
+		if err != nil {
+			return nil, err
+		}
+
+		return req, nil
+	case ListRemove:
+		anime := change.Args[0].(Anime)
+
+		animeID, err := anime.ID(Hummingbird)
+		if err != nil {
+			return nil, err
+		}
+
+		status, err := anime.Status()
+		if err != nil {
+			return nil, err
+		}
+
+		statusStr, err := StatusToHummingbirdString(status)
+		if err != nil {
+			return nil, err
+		}
+
+		form := url.Values{}
+		form.Add("auth_token", hal.AuthToken())
+		form.Add("status", statusStr)
+		form.Add("rewatching", fmt.Sprintf("%t", anime.Rewatching()))
+		form.Add("rewatched_times", fmt.Sprintf("%d", anime.RewatchedTimes()))
+		form.Add("episodes_watched", fmt.Sprintf("%d", anime.EpisodesWatched()))
+
+		req, err := http.NewRequest("POST", fmt.Sprintf(hummingbirdAddURL, animeID), strings.NewReader(form.Encode()))
+		if err != nil {
+			return nil, err
+		}
+		return req, nil
+	default:
+		return nil, errors.New("Invalid change type")
+	}
 }

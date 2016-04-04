@@ -49,6 +49,13 @@ func (change *Change) PopulateDiff(oldAnime Anime, anime Anime) {
 	}
 }
 
+// MergeChanges takes a list of changes and returns one merged change
+// with all of the changes combined
+func MergeChanges(changes []*Change) *Change {
+	// TODO(DarinM223): implement this
+	return nil
+}
+
 type Anime interface {
 	ID(listType int) (int, error)
 	Title() string
