@@ -66,7 +66,7 @@ var defaultHummingbirdAnime = HummingbirdAnime{
 	data:            HummingbirdAnimeData{id: 69},
 }
 
-// TODO(DarinM223): add MyAnimeList tests and edit tests for Hummingbird
+// TODO(DarinM223): add MyAnimeList tests
 var changeFillFormTests = []struct {
 	listType     int
 	change       Change
@@ -106,6 +106,72 @@ var changeFillFormTests = []struct {
 			"rewatched_times":  []string{"2"},
 			"episodes_watched": []string{"11"},
 		},
+	},
+	{
+		listType: Hummingbird,
+		change: EditChange{
+			HummingbirdAnime{
+				episodesWatched: 2,
+				status:          "currently-watching",
+				rewatchedTimes:  0,
+				rewatching:      false,
+			},
+			HummingbirdAnime{
+				episodesWatched: 3,
+				status:          "completed",
+				rewatchedTimes:  1,
+				rewatching:      true,
+			},
+		},
+		undo: false,
+		expectedForm: map[string][]string{
+			"episodes_watched": []string{"3"},
+			"status":           []string{"completed"},
+			"rewatched_times":  []string{"1"},
+			"rewatching":       []string{"true"},
+		},
+	},
+	{
+		listType: Hummingbird,
+		change: EditChange{
+			defaultHummingbirdAnime,
+			defaultHummingbirdAnime,
+		},
+		undo:         false,
+		expectedForm: map[string][]string{},
+	},
+	{
+		listType: Hummingbird,
+		change: EditChange{
+			HummingbirdAnime{
+				episodesWatched: 2,
+				status:          "currently-watching",
+				rewatchedTimes:  0,
+				rewatching:      false,
+			},
+			HummingbirdAnime{
+				episodesWatched: 3,
+				status:          "completed",
+				rewatchedTimes:  1,
+				rewatching:      true,
+			},
+		},
+		undo: true,
+		expectedForm: map[string][]string{
+			"episodes_watched": []string{"2"},
+			"status":           []string{"currently-watching"},
+			"rewatched_times":  []string{"0"},
+			"rewatching":       []string{"false"},
+		},
+	},
+	{
+		listType: Hummingbird,
+		change: EditChange{
+			defaultHummingbirdAnime,
+			defaultHummingbirdAnime,
+		},
+		undo:         true,
+		expectedForm: map[string][]string{},
 	},
 }
 

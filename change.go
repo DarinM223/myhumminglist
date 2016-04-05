@@ -90,11 +90,38 @@ func (change EditChange) FillForm(listType int, form *url.Values, undo ...bool) 
 		}
 	}
 
-	_ = undoForm
-
 	switch listType {
 	case Hummingbird:
-		// TODO(DarinM223): set form for Hummingbird request
+		if change.NewAnime.Status() != change.OldAnime.Status() {
+			var status string
+			if undoForm {
+				status = StatusToHummingbirdString(change.OldAnime.Status())
+			} else {
+				status = StatusToHummingbirdString(change.NewAnime.Status())
+			}
+			form.Add("status", status)
+		}
+		if change.NewAnime.EpisodesWatched() != change.OldAnime.EpisodesWatched() {
+			if undoForm {
+				form.Add("episodes_watched", fmt.Sprintf("%d", change.OldAnime.EpisodesWatched()))
+			} else {
+				form.Add("episodes_watched", fmt.Sprintf("%d", change.NewAnime.EpisodesWatched()))
+			}
+		}
+		if change.NewAnime.RewatchedTimes() != change.OldAnime.RewatchedTimes() {
+			if undoForm {
+				form.Add("rewatched_times", fmt.Sprintf("%d", change.OldAnime.RewatchedTimes()))
+			} else {
+				form.Add("rewatched_times", fmt.Sprintf("%d", change.NewAnime.RewatchedTimes()))
+			}
+		}
+		if change.NewAnime.Rewatching() != change.OldAnime.Rewatching() {
+			if undoForm {
+				form.Add("rewatching", fmt.Sprintf("%t", change.OldAnime.Rewatching()))
+			} else {
+				form.Add("rewatching", fmt.Sprintf("%t", change.NewAnime.Rewatching()))
+			}
+		}
 	case MyAnimeList:
 		// TODO(DarinM223): set form for MyAnimeList request
 	}
