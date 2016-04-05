@@ -31,9 +31,9 @@ func (change AddChange) URL(listType int, undo ...bool) string {
 	switch listType {
 	case Hummingbird:
 		if undoURL {
-			return fmt.Sprintf(hummingbirdAddURL, change.Anime.ID().Get(Hummingbird))
-		} else {
 			return fmt.Sprintf(hummingbirdDeleteURL, change.Anime.ID().Get(Hummingbird))
+		} else {
+			return fmt.Sprintf(hummingbirdAddURL, change.Anime.ID().Get(Hummingbird))
 		}
 	case MyAnimeList:
 		// TODO(DarinM223): set URL for MyAnimeList
@@ -132,13 +132,19 @@ func (change DeleteChange) FillForm(listType int, form *url.Values, undo ...bool
 // MergeChanges takes a list of changes and returns a
 // smaller list with similar changes merged
 func MergeChanges(changes []Change, listType int) []Change {
+	// TODO(DarinM223): order maps by storing a sorted slice of keys
 	addMap := make(map[int]Anime)
 	editMap := make(map[int]Change)
+	deleteMap := make(map[int]Change)
 
 	for _, change := range changes {
 		switch c := change.(type) {
 		case AddChange:
-			addMap[c.Anime.ID().Get(listType)] = c.Anime
+			animeID := c.Anime.ID().Get(listType)
+			addMap[animeID] = c.Anime
+			if _, ok := deleteMap[animeID]; ok {
+				delete(deleteMap, animeID)
+			}
 		case EditChange:
 			animeID := c.NewAnime.ID().Get(listType)
 			if _, ok := addMap[animeID]; ok {
@@ -146,10 +152,20 @@ func MergeChanges(changes []Change, listType int) []Change {
 			} else {
 				editMap[animeID] = change
 			}
+			if _, ok := deleteMap[animeID]; ok {
+				delete(deleteMap, animeID)
+			}
 		case DeleteChange:
 			animeID := c.Anime.ID().Get(listType)
-			delete(addMap, animeID)
-			delete(editMap, animeID)
+			_, inAdd := addMap[animeID]
+			_, inEdit := editMap[animeID]
+
+			if !inAdd && !inEdit {
+				deleteMap[animeID] = change
+			} else {
+				delete(addMap, animeID)
+				delete(editMap, animeID)
+			}
 		}
 	}
 
@@ -161,6 +177,9 @@ func MergeChanges(changes []Change, listType int) []Change {
 		newChanges = append(newChanges, change)
 	}
 	for _, change := range editMap {
+		newChanges = append(newChanges, change)
+	}
+	for _, change := range deleteMap {
 		newChanges = append(newChanges, change)
 	}
 
