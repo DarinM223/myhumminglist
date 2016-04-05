@@ -105,7 +105,6 @@ type DeleteChange struct {
 }
 
 func (change DeleteChange) URL(listType int, undo ...bool) string {
-	// Reverse undo parameter
 	undoURL := true
 	if len(undo) > 0 {
 		undoURL = !undo[0]
@@ -133,53 +132,56 @@ func (change DeleteChange) FillForm(listType int, form *url.Values, undo ...bool
 // smaller list with similar changes merged
 func MergeChanges(changes []Change, listType int) []Change {
 	// TODO(DarinM223): order maps by storing a sorted slice of keys
-	addMap := make(map[int]Anime)
-	editMap := make(map[int]Change)
-	deleteMap := make(map[int]Change)
+	addMap := newOrderedMap()
+	editMap := newOrderedMap()
+	deleteMap := newOrderedMap()
 
 	for _, change := range changes {
 		switch c := change.(type) {
 		case AddChange:
 			animeID := c.Anime.ID().Get(listType)
-			addMap[animeID] = c.Anime
-			if _, ok := deleteMap[animeID]; ok {
-				delete(deleteMap, animeID)
+			addMap.add(animeID, c.Anime)
+			if _, ok := deleteMap.dict[animeID]; ok {
+				deleteMap.remove(animeID)
 			}
 		case EditChange:
 			animeID := c.NewAnime.ID().Get(listType)
-			if _, ok := addMap[animeID]; ok {
-				addMap[animeID] = c.NewAnime
+			if _, ok := addMap.dict[animeID]; ok {
+				addMap.add(animeID, c.NewAnime)
 			} else {
-				editMap[animeID] = change
+				editMap.add(animeID, change)
 			}
-			if _, ok := deleteMap[animeID]; ok {
-				delete(deleteMap, animeID)
+			if _, ok := deleteMap.dict[animeID]; ok {
+				deleteMap.remove(animeID)
 			}
 		case DeleteChange:
 			animeID := c.Anime.ID().Get(listType)
-			_, inAdd := addMap[animeID]
-			_, inEdit := editMap[animeID]
+			_, inAdd := addMap.dict[animeID]
+			_, inEdit := editMap.dict[animeID]
 
 			if !inAdd && !inEdit {
-				deleteMap[animeID] = change
+				deleteMap.add(animeID, change)
 			} else {
-				delete(addMap, animeID)
-				delete(editMap, animeID)
+				addMap.remove(animeID)
+				editMap.remove(animeID)
 			}
 		}
 	}
 
 	var newChanges []Change
-	for _, anime := range addMap {
+	for _, key := range addMap.keys {
+		anime := addMap.dict[key].(Anime)
 		change := AddChange{
 			Anime: anime,
 		}
 		newChanges = append(newChanges, change)
 	}
-	for _, change := range editMap {
+	for _, key := range editMap.keys {
+		change := editMap.dict[key].(Change)
 		newChanges = append(newChanges, change)
 	}
-	for _, change := range deleteMap {
+	for _, key := range deleteMap.keys {
+		change := deleteMap.dict[key].(Change)
 		newChanges = append(newChanges, change)
 	}
 

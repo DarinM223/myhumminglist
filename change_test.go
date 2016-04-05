@@ -58,14 +58,6 @@ var changeURLTests = []struct {
 	},
 }
 
-func TestChangeURL(t *testing.T) {
-	for _, test := range changeURLTests {
-		if test.change.URL(test.listType, test.undo) != test.expectedURL {
-			t.Errorf("TestChangeURL failed: want %s got %s", test.expectedURL, test.change.URL(test.listType, test.undo))
-		}
-	}
-}
-
 var defaultHummingbirdAnime = HummingbirdAnime{
 	episodesWatched: 11,
 	status:          "currently-watching",
@@ -115,16 +107,6 @@ var changeFillFormTests = []struct {
 			"episodes_watched": []string{"11"},
 		},
 	},
-}
-
-func TestChangeFillForm(t *testing.T) {
-	for _, test := range changeFillFormTests {
-		form := url.Values{}
-		test.change.FillForm(test.listType, &form, test.undo)
-		if !reflect.DeepEqual(form, test.expectedForm) {
-			t.Errorf("TestChangeFillForm failed: want %v got %v", test.expectedForm, form)
-		}
-	}
 }
 
 var mergeChangesTests = []struct {
@@ -191,6 +173,37 @@ var mergeChangesTests = []struct {
 			DeleteChange{HummingbirdAnime{data: HummingbirdAnimeData{id: 72}}},
 		},
 	},
+	{
+		listType: Hummingbird,
+		changes: []Change{
+			AddChange{HummingbirdAnime{data: HummingbirdAnimeData{id: 420}}},
+			AddChange{HummingbirdAnime{data: HummingbirdAnimeData{id: 69}}},
+			AddChange{HummingbirdAnime{data: HummingbirdAnimeData{id: 620}}},
+		},
+		expectedChanges: []Change{
+			AddChange{HummingbirdAnime{data: HummingbirdAnimeData{id: 69}}},
+			AddChange{HummingbirdAnime{data: HummingbirdAnimeData{id: 420}}},
+			AddChange{HummingbirdAnime{data: HummingbirdAnimeData{id: 620}}},
+		},
+	},
+}
+
+func TestChangeURL(t *testing.T) {
+	for _, test := range changeURLTests {
+		if test.change.URL(test.listType, test.undo) != test.expectedURL {
+			t.Errorf("TestChangeURL failed: want %s got %s", test.expectedURL, test.change.URL(test.listType, test.undo))
+		}
+	}
+}
+
+func TestChangeFillForm(t *testing.T) {
+	for _, test := range changeFillFormTests {
+		form := url.Values{}
+		test.change.FillForm(test.listType, &form, test.undo)
+		if !reflect.DeepEqual(form, test.expectedForm) {
+			t.Errorf("TestChangeFillForm failed: want %v got %v", test.expectedForm, form)
+		}
+	}
 }
 
 func TestMergeChanges(t *testing.T) {
