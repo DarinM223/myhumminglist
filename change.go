@@ -159,27 +159,27 @@ func (change DeleteChange) FillForm(listType int, form *url.Values, undo ...bool
 // smaller list with similar changes merged
 func MergeChanges(changes []Change, listType int) []Change {
 	// TODO(DarinM223): order maps by storing a sorted slice of keys
-	addMap := newOrderedMap()
-	editMap := newOrderedMap()
-	deleteMap := newOrderedMap()
+	addMap := NewLRUMap()
+	editMap := NewLRUMap()
+	deleteMap := NewLRUMap()
 
 	for _, change := range changes {
 		switch c := change.(type) {
 		case AddChange:
 			animeID := c.Anime.ID().Get(listType)
-			addMap.add(animeID, c.Anime)
+			addMap.Add(animeID, c.Anime)
 			if _, ok := deleteMap.dict[animeID]; ok {
-				deleteMap.remove(animeID)
+				deleteMap.Remove(animeID)
 			}
 		case EditChange:
 			animeID := c.NewAnime.ID().Get(listType)
 			if _, ok := addMap.dict[animeID]; ok {
-				addMap.add(animeID, c.NewAnime)
+				addMap.Add(animeID, c.NewAnime)
 			} else {
-				editMap.add(animeID, change)
+				editMap.Add(animeID, change)
 			}
 			if _, ok := deleteMap.dict[animeID]; ok {
-				deleteMap.remove(animeID)
+				deleteMap.Remove(animeID)
 			}
 		case DeleteChange:
 			animeID := c.Anime.ID().Get(listType)
@@ -187,29 +187,29 @@ func MergeChanges(changes []Change, listType int) []Change {
 			_, inEdit := editMap.dict[animeID]
 
 			if !inAdd && !inEdit {
-				deleteMap.add(animeID, change)
+				deleteMap.Add(animeID, change)
 			} else {
-				addMap.remove(animeID)
-				editMap.remove(animeID)
+				addMap.Remove(animeID)
+				editMap.Remove(animeID)
 			}
 		}
 	}
 
 	var newChanges []Change
-	for _, key := range addMap.keys {
-		anime := addMap.dict[key].(Anime)
+	for _, key := range addMap.Keys() {
+		anime, _ := addMap.Get(key)
 		change := AddChange{
-			Anime: anime,
+			Anime: anime.(Anime),
 		}
 		newChanges = append(newChanges, change)
 	}
-	for _, key := range editMap.keys {
-		change := editMap.dict[key].(Change)
-		newChanges = append(newChanges, change)
+	for _, key := range editMap.Keys() {
+		change, _ := editMap.Get(key)
+		newChanges = append(newChanges, change.(Change))
 	}
-	for _, key := range deleteMap.keys {
-		change := deleteMap.dict[key].(Change)
-		newChanges = append(newChanges, change)
+	for _, key := range deleteMap.Keys() {
+		change, _ := deleteMap.Get(key)
+		newChanges = append(newChanges, change.(Change))
 	}
 
 	return newChanges

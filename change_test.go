@@ -247,8 +247,8 @@ var mergeChangesTests = []struct {
 			AddChange{HummingbirdAnime{data: HummingbirdAnimeData{id: 620}}},
 		},
 		expectedChanges: []Change{
-			AddChange{HummingbirdAnime{data: HummingbirdAnimeData{id: 69}}},
 			AddChange{HummingbirdAnime{data: HummingbirdAnimeData{id: 420}}},
+			AddChange{HummingbirdAnime{data: HummingbirdAnimeData{id: 69}}},
 			AddChange{HummingbirdAnime{data: HummingbirdAnimeData{id: 620}}},
 		},
 	},
