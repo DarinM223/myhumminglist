@@ -96,6 +96,12 @@ func (lru *LRUMap) Get(key int) (interface{}, error) {
 	}
 }
 
+// Contains returns true if the map contains the key, false otherwise
+func (lru *LRUMap) Contains(key int) bool {
+	_, ok := lru.dict[key]
+	return ok
+}
+
 // Remove removes a key from the map
 func (lru *LRUMap) Remove(key int) {
 	if node, ok := lru.dict[key]; ok {

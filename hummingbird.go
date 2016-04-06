@@ -198,12 +198,7 @@ func (hal *HummingbirdAnimeList) Undo() error {
 
 // GenerateChange returns a HTTP request that applies the change
 func (hal *HummingbirdAnimeList) GenerateChange(change Change, undo ...bool) (*http.Request, error) {
-	undoForm := false
-	if len(undo) > 0 {
-		if undo[0] == true {
-			undoForm = true
-		}
-	}
+	undoForm := len(undo) > 0 && undo[0]
 
 	form := url.Values{}
 	form.Add("auth_token", hal.AuthToken())

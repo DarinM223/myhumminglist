@@ -1,5 +1,10 @@
 package main
 
+import (
+	"errors"
+	"fmt"
+)
+
 // sortedInsert inserts a value into a sorted array of integers
 func sortedInsert(arr []int, value int) []int {
 	if len(arr) == 0 {
@@ -59,28 +64,48 @@ func sortedRemove(arr []int, value int) []int {
 	return append(arr[:index], arr[index+1:]...)
 }
 
-type orderedMap struct {
+// OrderedMap is a map that allows you to iterate
+// over the keys in numerical order
+type OrderedMap struct {
 	// sorted keys of indexes
 	keys []int
 	// map of index to value
 	dict map[int]interface{}
 }
 
-func newOrderedMap() orderedMap {
-	return orderedMap{
+// NewOrderedMap creates a new ordered map
+func NewOrderedMap() OrderedMap {
+	return OrderedMap{
 		keys: []int{},
 		dict: make(map[int]interface{}),
 	}
 }
 
-func (m *orderedMap) add(key int, value interface{}) {
+// Add adds a new key-value mapping to the map
+func (m *OrderedMap) Add(key int, value interface{}) {
 	if _, ok := m.dict[key]; !ok {
 		m.keys = sortedInsert(m.keys, key)
 	}
 	m.dict[key] = value
 }
 
-func (m *orderedMap) remove(key int) {
+// Remove removes a key from the map
+func (m *OrderedMap) Remove(key int) {
 	delete(m.dict, key)
 	m.keys = sortedRemove(m.keys, key)
+}
+
+// Get retrieves a value from an integer key
+func (m *OrderedMap) Get(key int) (interface{}, error) {
+	if value, ok := m.dict[key]; ok {
+		return value, nil
+	} else {
+		return nil, errors.New(fmt.Sprintf("Key %d is not in the OrderedMap", key))
+	}
+}
+
+// Contains returns true if the map contains the key, false otherwise
+func (m *OrderedMap) Contains(key int) bool {
+	_, ok := m.dict[key]
+	return ok
 }

@@ -21,12 +21,7 @@ type AddChange struct {
 }
 
 func (change AddChange) URL(listType int, undo ...bool) string {
-	undoURL := false
-	if len(undo) > 0 {
-		if undo[0] == true {
-			undoURL = true
-		}
-	}
+	undoURL := len(undo) > 0 && undo[0]
 
 	switch listType {
 	case Hummingbird:
@@ -44,14 +39,7 @@ func (change AddChange) URL(listType int, undo ...bool) string {
 }
 
 func (change AddChange) FillForm(listType int, form *url.Values, undo ...bool) {
-	undoForm := false
-	if len(undo) > 0 {
-		if undo[0] == true {
-			undoForm = true
-		}
-	}
-
-	if !undoForm {
+	if len(undo) <= 0 || !undo[0] {
 		switch listType {
 		case Hummingbird:
 			// TODO(DarinM223): set form for Hummingbird request
@@ -83,12 +71,7 @@ func (change EditChange) URL(listType int, undo ...bool) string {
 }
 
 func (change EditChange) FillForm(listType int, form *url.Values, undo ...bool) {
-	undoForm := false
-	if len(undo) > 0 {
-		if undo[0] == true {
-			undoForm = true
-		}
-	}
+	undoForm := len(undo) > 0 && undo[0]
 
 	switch listType {
 	case Hummingbird:
@@ -142,14 +125,7 @@ func (change DeleteChange) URL(listType int, undo ...bool) string {
 }
 
 func (change DeleteChange) FillForm(listType int, form *url.Values, undo ...bool) {
-	undoForm := false
-	if len(undo) > 0 {
-		if undo[0] == true {
-			undoForm = true
-		}
-	}
-
-	if undoForm {
+	if len(undo) > 0 && undo[0] {
 		addChange := AddChange{Anime: change.Anime}
 		addChange.FillForm(listType, form)
 	}
@@ -168,23 +144,23 @@ func MergeChanges(changes []Change, listType int) []Change {
 		case AddChange:
 			animeID := c.Anime.ID().Get(listType)
 			addMap.Add(animeID, c.Anime)
-			if _, ok := deleteMap.dict[animeID]; ok {
+			if deleteMap.Contains(animeID) {
 				deleteMap.Remove(animeID)
 			}
 		case EditChange:
 			animeID := c.NewAnime.ID().Get(listType)
-			if _, ok := addMap.dict[animeID]; ok {
+			if addMap.Contains(animeID) {
 				addMap.Add(animeID, c.NewAnime)
 			} else {
 				editMap.Add(animeID, change)
 			}
-			if _, ok := deleteMap.dict[animeID]; ok {
+			if deleteMap.Contains(animeID) {
 				deleteMap.Remove(animeID)
 			}
 		case DeleteChange:
 			animeID := c.Anime.ID().Get(listType)
-			_, inAdd := addMap.dict[animeID]
-			_, inEdit := editMap.dict[animeID]
+			inAdd := addMap.Contains(animeID)
+			inEdit := editMap.Contains(animeID)
 
 			if !inAdd && !inEdit {
 				deleteMap.Add(animeID, change)
