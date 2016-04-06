@@ -113,10 +113,7 @@ func (hal *HummingbirdAnimeList) Add(anime HummingbirdAnime) error {
 		},
 	}
 
-	change := AddChange{
-		Anime: anime,
-	}
-
+	change := AddChange{Anime: anime}
 	hal.changes = append(hal.changes, change)
 	return nil
 }
@@ -142,10 +139,7 @@ func (hal *HummingbirdAnimeList) Remove(anime Anime) error {
 	id := anime.ID().Get(hal.Type())
 	delete(hal.anime, id)
 
-	change := DeleteChange{
-		Anime: anime,
-	}
-
+	change := DeleteChange{Anime: anime}
 	hal.changes = append(hal.changes, change)
 	return nil
 }
@@ -163,12 +157,18 @@ func (hal *HummingbirdAnimeList) Push() error {
 		changeRequests = append(changeRequests, request)
 	}
 
-	// TODO(DarinM223): send asynchronously using goroutines
-	client := &http.Client{}
-	for _, request := range changeRequests {
-		if _, err := client.Do(request); err != nil {
-			return err
+	// sends changes asynchronously
+	resultCh := make(chan error)
+	go SendRequests(changeRequests, resultCh, 3, func(resp *http.Response) error {
+		if resp.StatusCode != 200 {
+			return errors.New("Status code is not 200")
 		}
+		return nil
+	})
+
+	// return error if sending changes failed
+	if err := <-resultCh; err != nil {
+		return err
 	}
 
 	hal.pastChanges = append(hal.pastChanges, mergedChanges...)

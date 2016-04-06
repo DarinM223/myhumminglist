@@ -134,7 +134,6 @@ func (change DeleteChange) FillForm(listType int, form *url.Values, undo ...bool
 // MergeChanges takes a list of changes and returns a
 // smaller list with similar changes merged
 func MergeChanges(changes []Change, listType int) []Change {
-	// TODO(DarinM223): order maps by storing a sorted slice of keys
 	addMap := NewLRUMap()
 	editMap := NewLRUMap()
 	deleteMap := NewLRUMap()
@@ -174,9 +173,7 @@ func MergeChanges(changes []Change, listType int) []Change {
 	var newChanges []Change
 	for _, key := range addMap.Keys() {
 		anime, _ := addMap.Get(key)
-		change := AddChange{
-			Anime: anime.(Anime),
-		}
+		change := AddChange{Anime: anime.(Anime)}
 		newChanges = append(newChanges, change)
 	}
 	for _, key := range editMap.Keys() {
