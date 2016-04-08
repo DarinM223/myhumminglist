@@ -18,13 +18,13 @@ var changeURLTests = []struct {
 		Hummingbird,
 		AddChange{HummingbirdAnime{data: HummingbirdAnimeData{id: 69}}},
 		false,
-		fmt.Sprintf(hummingbirdAddURL, 69),
+		fmt.Sprintf(HummingbirdAddURL, 69),
 	},
 	{
 		Hummingbird,
 		AddChange{HummingbirdAnime{data: HummingbirdAnimeData{id: 69}}},
 		true,
-		fmt.Sprintf(hummingbirdDeleteURL, 69),
+		fmt.Sprintf(HummingbirdDeleteURL, 69),
 	},
 	{
 		Hummingbird,
@@ -33,7 +33,7 @@ var changeURLTests = []struct {
 			HummingbirdAnime{data: HummingbirdAnimeData{id: 69}},
 		},
 		false,
-		fmt.Sprintf(hummingbirdEditURL, 69),
+		fmt.Sprintf(HummingbirdEditURL, 69),
 	},
 	{
 		Hummingbird,
@@ -42,19 +42,19 @@ var changeURLTests = []struct {
 			HummingbirdAnime{data: HummingbirdAnimeData{id: 69}},
 		},
 		true,
-		fmt.Sprintf(hummingbirdEditURL, 69),
+		fmt.Sprintf(HummingbirdEditURL, 69),
 	},
 	{
 		Hummingbird,
 		DeleteChange{HummingbirdAnime{data: HummingbirdAnimeData{id: 69}}},
 		false,
-		fmt.Sprintf(hummingbirdDeleteURL, 69),
+		fmt.Sprintf(HummingbirdDeleteURL, 69),
 	},
 	{
 		Hummingbird,
 		DeleteChange{HummingbirdAnime{data: HummingbirdAnimeData{id: 69}}},
 		true,
-		fmt.Sprintf(hummingbirdAddURL, 69),
+		fmt.Sprintf(HummingbirdAddURL, 69),
 	},
 }
 

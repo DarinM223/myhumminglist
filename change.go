@@ -5,12 +5,6 @@ import (
 	"net/url"
 )
 
-const (
-	hummingbirdAddURL    = "https://hummingbird.me/api/v1/libraries/%d"
-	hummingbirdEditURL   = "https://hummingbird.me/api/v1/libraries/%d"
-	hummingbirdDeleteURL = "https://hummingbird.me/api/v1/libraries/%d/remove"
-)
-
 type Change interface {
 	FillForm(listType int, form *url.Values, undo ...bool)
 	URL(listType int, undo ...bool) string
@@ -26,9 +20,9 @@ func (change AddChange) URL(listType int, undo ...bool) string {
 	switch listType {
 	case Hummingbird:
 		if undoURL {
-			return fmt.Sprintf(hummingbirdDeleteURL, change.Anime.ID().Get(Hummingbird))
+			return fmt.Sprintf(HummingbirdDeleteURL, change.Anime.ID().Get(Hummingbird))
 		} else {
-			return fmt.Sprintf(hummingbirdAddURL, change.Anime.ID().Get(Hummingbird))
+			return fmt.Sprintf(HummingbirdAddURL, change.Anime.ID().Get(Hummingbird))
 		}
 	case MyAnimeList:
 		// TODO(DarinM223): set URL for MyAnimeList
@@ -61,7 +55,7 @@ type EditChange struct {
 func (change EditChange) URL(listType int, undo ...bool) string {
 	switch listType {
 	case Hummingbird:
-		return fmt.Sprintf(hummingbirdEditURL, change.NewAnime.ID().Get(Hummingbird))
+		return fmt.Sprintf(HummingbirdEditURL, change.NewAnime.ID().Get(Hummingbird))
 	case MyAnimeList:
 		// TODO(DarinM223): set URL for MyAnimeList
 		return ""

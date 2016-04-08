@@ -2,9 +2,18 @@ package main
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 	"net/url"
+	"reflect"
 	"strings"
+)
+
+const (
+	HummingbirdAddURL     = "https://hummingbird.me/api/v1/libraries/%d"
+	HummingbirdEditURL    = "https://hummingbird.me/api/v1/libraries/%d"
+	HummingbirdDeleteURL  = "https://hummingbird.me/api/v1/libraries/%d/remove"
+	HummingbirdLibraryURL = "https://hummingbird.me/api/v1/users/%s/library"
 )
 
 // HummingbirdAnime represents the JSON data of a Hummingbird library entry
@@ -83,6 +92,7 @@ func StatusToHummingbirdString(status int) string {
 }
 
 type HummingbirdAnimeList struct {
+	username    string
 	anime       map[int]HummingbirdAnime
 	changes     []Change
 	pastChanges []Change
@@ -131,8 +141,11 @@ func (hal *HummingbirdAnimeList) Edit(anime Anime) error {
 	return nil
 }
 
-func (hal *HummingbirdAnimeList) Get(id int) Anime {
-	return hal.anime[id]
+func (hal *HummingbirdAnimeList) Get(id int) (Anime, error) {
+	if anime, ok := hal.anime[id]; ok {
+		return anime, nil
+	}
+	return nil, errors.New(fmt.Sprintf("Anime with ID %d is not in the anime list", id))
 }
 
 func (hal *HummingbirdAnimeList) Remove(anime Anime) error {
@@ -205,4 +218,24 @@ func (hal *HummingbirdAnimeList) GenerateChange(change Change, undo ...bool) (*h
 
 	change.FillForm(Hummingbird, &form, undoForm)
 	return http.NewRequest("POST", change.URL(Hummingbird, undoForm), strings.NewReader(form.Encode()))
+}
+
+// DiffHummingbirdLists creates a list of changes from diffing two Hummingbird anime lists
+func DiffHummingbirdLists(oldList *HummingbirdAnimeList, newList *HummingbirdAnimeList) []Change {
+	var changes []Change
+	for id, oldAnime := range oldList.anime {
+		if newAnime, ok := newList.anime[id]; ok {
+			if !reflect.DeepEqual(newAnime, oldAnime) {
+				changes = append(changes, EditChange{OldAnime: oldAnime, NewAnime: newAnime})
+			}
+		} else {
+			changes = append(changes, DeleteChange{Anime: oldAnime})
+		}
+	}
+	for id, anime := range newList.anime {
+		if _, ok := oldList.anime[id]; !ok {
+			changes = append(changes, AddChange{Anime: anime})
+		}
+	}
+	return changes
 }
