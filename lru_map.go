@@ -77,12 +77,9 @@ func (lru *LRUMap) Add(key int, data interface{}) {
 	newNode := newKeyValNode(key, data)
 	if node, ok := lru.dict[key]; ok {
 		lru.removeFromQueue(node)
-		lru.dict[key] = newNode
-		lru.addToFrontOfQueue(newNode)
-	} else {
-		lru.addToFrontOfQueue(newNode)
-		lru.dict[key] = newNode
 	}
+	lru.addToFrontOfQueue(newNode)
+	lru.dict[key] = newNode
 }
 
 // Get retrieves a value from a integer key

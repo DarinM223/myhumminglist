@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	_ "io/ioutil"
 	"net/http"
 	"net/url"
 	"reflect"
@@ -19,15 +18,12 @@ const (
 )
 
 // HummingbirdAnime represents the JSON data of a Hummingbird library entry
-// Fields are prefixed with J because JSON exported fields have to start with a capital
-// but the capitalized attributes would conflict with the interface methods for anime
-// TODO(Darin): change naming scheme to prevent having to prefix with 'J'
 type HummingbirdAnime struct {
-	JEpisodesWatched int                  `json:"episodes_watched"`
-	JStatus          string               `json:"status"`
-	JRewatchedTimes  int                  `json:"rewatched_times"`
-	JRewatching      bool                 `json:"rewatching"`
-	JData            HummingbirdAnimeData `json:"anime"`
+	NumEpisodesWatched int                  `json:"episodes_watched"`
+	AnimeStatus        string               `json:"status"`
+	NumRewatchedTimes  int                  `json:"rewatched_times"`
+	IsRewatching       bool                 `json:"rewatching"`
+	Data               HummingbirdAnimeData `json:"anime"`
 }
 
 // HummingbirdAnimeData represents the JSON data of a Hummingbird anime
@@ -41,17 +37,17 @@ type HummingbirdAnimeData struct {
 
 func (ha HummingbirdAnime) ID() AnimeID {
 	return AnimeID{
-		Hummingbird: ha.JData.Id,
-		MyAnimeList: ha.JData.MalID,
+		Hummingbird: ha.Data.Id,
+		MyAnimeList: ha.Data.MalID,
 	}
 }
 
 func (ha HummingbirdAnime) Title() string {
-	return ha.JData.Title
+	return ha.Data.Title
 }
 
 func (ha HummingbirdAnime) Status() int {
-	switch ha.JStatus {
+	switch ha.AnimeStatus {
 	case "currently-watching":
 		return StatusWatching
 	case "plan-to-watch":
@@ -68,15 +64,15 @@ func (ha HummingbirdAnime) Status() int {
 }
 
 func (ha HummingbirdAnime) EpisodesWatched() int {
-	return ha.JEpisodesWatched
+	return ha.NumEpisodesWatched
 }
 
 func (ha HummingbirdAnime) RewatchedTimes() int {
-	return ha.JRewatchedTimes
+	return ha.NumRewatchedTimes
 }
 
 func (ha HummingbirdAnime) Rewatching() bool {
-	return ha.JRewatching
+	return ha.IsRewatching
 }
 
 func StatusToHummingbirdString(status int) string {
@@ -171,16 +167,14 @@ func (hal *HummingbirdAnimeList) Fetch() error {
 
 func (hal *HummingbirdAnimeList) Add(anime HummingbirdAnime) error {
 	id := anime.ID().Get(Hummingbird)
-	malID := anime.ID().Get(MyAnimeList)
-	status := StatusToHummingbirdString(anime.Status())
 
 	hal.anime[id] = HummingbirdAnime{
-		JEpisodesWatched: anime.EpisodesWatched(),
-		JRewatchedTimes:  anime.RewatchedTimes(),
-		JStatus:          status,
-		JData: HummingbirdAnimeData{
+		NumEpisodesWatched: anime.EpisodesWatched(),
+		NumRewatchedTimes:  anime.RewatchedTimes(),
+		AnimeStatus:        StatusToHummingbirdString(anime.Status()),
+		Data: HummingbirdAnimeData{
 			Id:    id,
-			MalID: malID,
+			MalID: anime.ID().Get(MyAnimeList),
 			Title: anime.Title(),
 		},
 	}
@@ -191,8 +185,7 @@ func (hal *HummingbirdAnimeList) Add(anime HummingbirdAnime) error {
 }
 
 func (hal *HummingbirdAnimeList) Edit(anime Anime) error {
-	id := anime.ID().Get(hal.Type())
-	oldAnime := hal.anime[id]
+	oldAnime := hal.anime[anime.ID().Get(Hummingbird)]
 
 	change := EditChange{
 		OldAnime: oldAnime,
@@ -211,9 +204,7 @@ func (hal *HummingbirdAnimeList) Get(id int) (Anime, error) {
 }
 
 func (hal *HummingbirdAnimeList) Remove(anime Anime) error {
-	id := anime.ID().Get(hal.Type())
-	delete(hal.anime, id)
-
+	delete(hal.anime, anime.ID().Get(Hummingbird))
 	change := DeleteChange{Anime: anime}
 	hal.changes = append(hal.changes, change)
 	return nil

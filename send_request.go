@@ -17,8 +17,8 @@ func SendRequests(requests []*http.Request, resultCh chan error, timeoutSec int,
 			resp, err := client.Do(req)
 			if err != nil {
 				responseChan <- err
-			} else if respErr := handleResponse(resp); respErr != nil {
-				responseChan <- respErr
+			} else if err = handleResponse(resp); err != nil {
+				responseChan <- err
 			} else {
 				responseChan <- nil
 			}
@@ -34,6 +34,7 @@ func SendRequests(requests []*http.Request, resultCh chan error, timeoutSec int,
 			}
 		case <-timeoutChan:
 			resultCh <- errors.New("SendRequests timed out!")
+			return
 		}
 	}
 	resultCh <- nil

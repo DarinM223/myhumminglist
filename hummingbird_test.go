@@ -14,72 +14,72 @@ var diffHummingbirdTests = []struct {
 		oldList: &HummingbirdAnimeList{
 			anime: map[int]HummingbirdAnime{
 				0: HummingbirdAnime{
-					JEpisodesWatched: 11,
-					JStatus:          "currently-watching",
-					JRewatchedTimes:  0,
-					JRewatching:      false,
-					JData:            HummingbirdAnimeData{Id: 0},
+					NumEpisodesWatched: 11,
+					AnimeStatus:        "currently-watching",
+					NumRewatchedTimes:  0,
+					IsRewatching:       false,
+					Data:               HummingbirdAnimeData{Id: 0},
 				},
 				2: HummingbirdAnime{
-					JEpisodesWatched: 5,
-					JStatus:          "currently-watching",
-					JRewatchedTimes:  1,
-					JRewatching:      true,
-					JData:            HummingbirdAnimeData{Id: 2},
+					NumEpisodesWatched: 5,
+					AnimeStatus:        "currently-watching",
+					NumRewatchedTimes:  1,
+					IsRewatching:       true,
+					Data:               HummingbirdAnimeData{Id: 2},
 				},
 			},
 		},
 		newList: &HummingbirdAnimeList{
 			anime: map[int]HummingbirdAnime{
 				1: HummingbirdAnime{
-					JEpisodesWatched: 1,
-					JStatus:          "currently-watching",
-					JRewatchedTimes:  0,
-					JRewatching:      false,
-					JData:            HummingbirdAnimeData{Id: 1},
+					NumEpisodesWatched: 1,
+					AnimeStatus:        "currently-watching",
+					NumRewatchedTimes:  0,
+					IsRewatching:       false,
+					Data:               HummingbirdAnimeData{Id: 1},
 				},
 				2: HummingbirdAnime{
-					JEpisodesWatched: 6,
-					JStatus:          "currently-watching",
-					JRewatchedTimes:  1,
-					JRewatching:      true,
-					JData:            HummingbirdAnimeData{Id: 2},
+					NumEpisodesWatched: 6,
+					AnimeStatus:        "currently-watching",
+					NumRewatchedTimes:  1,
+					IsRewatching:       true,
+					Data:               HummingbirdAnimeData{Id: 2},
 				},
 			},
 		},
 		expectedChanges: []Change{
 			DeleteChange{
 				Anime: HummingbirdAnime{
-					JEpisodesWatched: 11,
-					JStatus:          "currently-watching",
-					JRewatchedTimes:  0,
-					JRewatching:      false,
-					JData:            HummingbirdAnimeData{Id: 0},
+					NumEpisodesWatched: 11,
+					AnimeStatus:        "currently-watching",
+					NumRewatchedTimes:  0,
+					IsRewatching:       false,
+					Data:               HummingbirdAnimeData{Id: 0},
 				},
 			},
 			EditChange{
 				OldAnime: HummingbirdAnime{
-					JEpisodesWatched: 5,
-					JStatus:          "currently-watching",
-					JRewatchedTimes:  1,
-					JRewatching:      true,
-					JData:            HummingbirdAnimeData{Id: 2},
+					NumEpisodesWatched: 5,
+					AnimeStatus:        "currently-watching",
+					NumRewatchedTimes:  1,
+					IsRewatching:       true,
+					Data:               HummingbirdAnimeData{Id: 2},
 				},
 				NewAnime: HummingbirdAnime{
-					JEpisodesWatched: 6,
-					JStatus:          "currently-watching",
-					JRewatchedTimes:  1,
-					JRewatching:      true,
-					JData:            HummingbirdAnimeData{Id: 2},
+					NumEpisodesWatched: 6,
+					AnimeStatus:        "currently-watching",
+					NumRewatchedTimes:  1,
+					IsRewatching:       true,
+					Data:               HummingbirdAnimeData{Id: 2},
 				},
 			},
 			AddChange{
 				Anime: HummingbirdAnime{
-					JEpisodesWatched: 1,
-					JStatus:          "currently-watching",
-					JRewatchedTimes:  0,
-					JRewatching:      false,
-					JData:            HummingbirdAnimeData{Id: 1},
+					NumEpisodesWatched: 1,
+					AnimeStatus:        "currently-watching",
+					NumRewatchedTimes:  0,
+					IsRewatching:       false,
+					Data:               HummingbirdAnimeData{Id: 1},
 				},
 			},
 		},
@@ -88,36 +88,36 @@ var diffHummingbirdTests = []struct {
 		oldList: &HummingbirdAnimeList{
 			anime: map[int]HummingbirdAnime{
 				0: HummingbirdAnime{
-					JEpisodesWatched: 11,
-					JStatus:          "currently-watching",
-					JRewatchedTimes:  0,
-					JRewatching:      true,
-					JData:            HummingbirdAnimeData{Id: 0},
+					NumEpisodesWatched: 11,
+					AnimeStatus:        "currently-watching",
+					NumRewatchedTimes:  0,
+					IsRewatching:       true,
+					Data:               HummingbirdAnimeData{Id: 0},
 				},
 				1: HummingbirdAnime{
-					JEpisodesWatched: 12,
-					JStatus:          "completed",
-					JRewatchedTimes:  1,
-					JRewatching:      false,
-					JData:            HummingbirdAnimeData{Id: 1},
+					NumEpisodesWatched: 12,
+					AnimeStatus:        "completed",
+					NumRewatchedTimes:  1,
+					IsRewatching:       false,
+					Data:               HummingbirdAnimeData{Id: 1},
 				},
 			},
 		},
 		newList: &HummingbirdAnimeList{
 			anime: map[int]HummingbirdAnime{
 				0: HummingbirdAnime{
-					JEpisodesWatched: 11,
-					JStatus:          "currently-watching",
-					JRewatchedTimes:  0,
-					JRewatching:      true,
-					JData:            HummingbirdAnimeData{Id: 0},
+					NumEpisodesWatched: 11,
+					AnimeStatus:        "currently-watching",
+					NumRewatchedTimes:  0,
+					IsRewatching:       true,
+					Data:               HummingbirdAnimeData{Id: 0},
 				},
 				1: HummingbirdAnime{
-					JEpisodesWatched: 12,
-					JStatus:          "completed",
-					JRewatchedTimes:  1,
-					JRewatching:      false,
-					JData:            HummingbirdAnimeData{Id: 1},
+					NumEpisodesWatched: 12,
+					AnimeStatus:        "completed",
+					NumRewatchedTimes:  1,
+					IsRewatching:       false,
+					Data:               HummingbirdAnimeData{Id: 1},
 				},
 			},
 		},
@@ -146,15 +146,12 @@ func TestDiffHummingbirdLists(t *testing.T) {
 
 func TestHummingbirdAnimeList_FetchFromEmpty(t *testing.T) {
 	list := NewHummingbirdAnimeList("darin_minamoto", "")
-	err := list.Fetch()
-	if err != nil {
+	if err := list.Fetch(); err != nil {
 		t.Errorf("TestHummingbirdAnimeList_FetchFromEmpty failed: " + err.Error())
 	}
-
 	if len(list.changes) <= 0 {
 		t.Errorf("TestHummingbirdAnimeList_FetchFromEmpty failed: list changes haven't been populated")
 	}
-
 	if len(list.anime) <= 0 {
 		t.Errorf("TestHummingbirdAnimeList_FetchFromEmpty failed: anime changes haven't been populated")
 	}

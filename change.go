@@ -152,10 +152,7 @@ func MergeChanges(changes []Change, listType int) []Change {
 			}
 		case DeleteChange:
 			animeID := c.Anime.ID().Get(listType)
-			inAdd := addMap.Contains(animeID)
-			inEdit := editMap.Contains(animeID)
-
-			if !inAdd && !inEdit {
+			if !addMap.Contains(animeID) && !editMap.Contains(animeID) {
 				deleteMap.Add(animeID, change)
 			} else {
 				addMap.Remove(animeID)

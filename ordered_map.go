@@ -19,10 +19,7 @@ func sortedInsert(arr []int, value int) []int {
 	index := 0
 	for start <= end {
 		mid := (start + end) / 2
-		if mid == start || mid == end {
-			index = mid
-			break
-		} else if value == arr[mid] {
+		if value == arr[mid] || mid == start || mid == end {
 			index = mid
 			break
 		} else if value < arr[mid] {
