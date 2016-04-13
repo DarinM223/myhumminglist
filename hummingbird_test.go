@@ -167,3 +167,85 @@ func TestHummingbirdAnimeList_FetchFromEmpty(t *testing.T) {
 		}
 	}
 }
+
+func TestHummingbirdAnimeList_AddHummingbirdAnime(t *testing.T) {
+	list := NewHummingbirdAnimeList("darin_minamoto", "")
+
+	anime := HummingbirdAnime{
+		NumEpisodesWatched: 12,
+		NumRewatchedTimes:  2,
+		AnimeStatus:        "currently-watching",
+		Data: HummingbirdAnimeData{
+			Id:    50,
+			MalID: 20,
+			Title: "Sample text",
+		},
+	}
+	list.Add(anime)
+
+	if !reflect.DeepEqual(list.anime[50], anime) {
+		t.Errorf("TestHummingbirdAnimeList_AddHummingbirdAnime failed: expected: %+v, got %+v", anime, list.anime[50])
+	}
+	if !reflect.DeepEqual(list.changes[len(list.changes)-1], AddChange{anime}) {
+		t.Errorf("TestHummingbirdAnimeList_AddHummingbirdAnime failed: expected change %+v", AddChange{anime})
+	}
+}
+
+func TestHummingbirdAnimeList_EditHummingbirdAnime(t *testing.T) {
+	list := NewHummingbirdAnimeList("darin_minamoto", "")
+	oldAnime := HummingbirdAnime{
+		NumEpisodesWatched: 11,
+		NumRewatchedTimes:  2,
+		AnimeStatus:        "currently-watching",
+		Data: HummingbirdAnimeData{
+			Id:    50,
+			MalID: 20,
+			Title: "Sample text",
+		},
+	}
+	newAnime := HummingbirdAnime{
+		NumEpisodesWatched: 12,
+		NumRewatchedTimes:  3,
+		AnimeStatus:        "completed",
+		Data: HummingbirdAnimeData{
+			Id:    50,
+			MalID: 20,
+			Title: "Sample text",
+		},
+	}
+	list.Add(oldAnime)
+	list.Edit(newAnime)
+
+	if !reflect.DeepEqual(list.anime[50], newAnime) {
+		t.Errorf("TestHummingbirdAnimeList_EditHummingbirdAnime failed: expected: %+v, got %+v",
+			newAnime, list.anime[50])
+	}
+	if !reflect.DeepEqual(list.changes[len(list.changes)-1], EditChange{OldAnime: oldAnime, NewAnime: newAnime}) {
+		t.Errorf("TestHummingbirdAnimeList_EditHummingbirdAnime failed: expected change %+v",
+			EditChange{OldAnime: oldAnime, NewAnime: newAnime})
+	}
+}
+
+func TestHummingbirdAnimeList_RemoveHummingbirdAnime(t *testing.T) {
+	list := NewHummingbirdAnimeList("darin_minamoto", "")
+	anime := HummingbirdAnime{
+		NumEpisodesWatched: 12,
+		NumRewatchedTimes:  2,
+		AnimeStatus:        "currently-watching",
+		Data: HummingbirdAnimeData{
+			Id:    50,
+			MalID: 20,
+			Title: "Sample text",
+		},
+	}
+	list.Add(anime)
+	list.Remove(anime)
+
+	if _, ok := list.anime[50]; ok {
+		t.Errorf("TestHummingbirdAnimeList_RemoveHummingbirdAnime failed: expected anime to not exist after removed")
+	}
+	if !reflect.DeepEqual(list.changes[len(list.changes)-1], DeleteChange{Anime: anime}) {
+		t.Errorf("TestHummingbirdAnimeList_RemoveHummingbirdAnime failed: expected change %+v",
+			DeleteChange{Anime: anime})
+	}
+}

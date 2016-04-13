@@ -40,10 +40,10 @@ type Anime interface {
 
 type Animelist interface {
 	Type() int
-	Add(anime Anime) error
-	Edit(anime Anime) error
+	Add(anime Anime)
+	Edit(anime Anime)
 	Get(id int) (Anime, error)
-	Remove(anime Anime) error
+	Remove(anime Anime)
 	Push()
 	Undo()
 	Anime() []Anime

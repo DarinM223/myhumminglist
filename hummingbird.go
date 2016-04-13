@@ -92,6 +92,19 @@ func StatusToHummingbirdString(status int) string {
 	}
 }
 
+func AnimeToHummingbird(anime Anime) HummingbirdAnime {
+	return HummingbirdAnime{
+		NumEpisodesWatched: anime.EpisodesWatched(),
+		NumRewatchedTimes:  anime.RewatchedTimes(),
+		AnimeStatus:        StatusToHummingbirdString(anime.Status()),
+		Data: HummingbirdAnimeData{
+			Id:    anime.ID().Get(Hummingbird),
+			MalID: anime.ID().Get(MyAnimeList),
+			Title: anime.Title(),
+		},
+	}
+}
+
 type HummingbirdAnimeList struct {
 	username    string
 	anime       map[int]HummingbirdAnime
@@ -165,27 +178,18 @@ func (hal *HummingbirdAnimeList) Fetch() error {
 	return nil
 }
 
-func (hal *HummingbirdAnimeList) Add(anime HummingbirdAnime) error {
+func (hal *HummingbirdAnimeList) Add(anime Anime) {
 	id := anime.ID().Get(Hummingbird)
-
-	hal.anime[id] = HummingbirdAnime{
-		NumEpisodesWatched: anime.EpisodesWatched(),
-		NumRewatchedTimes:  anime.RewatchedTimes(),
-		AnimeStatus:        StatusToHummingbirdString(anime.Status()),
-		Data: HummingbirdAnimeData{
-			Id:    id,
-			MalID: anime.ID().Get(MyAnimeList),
-			Title: anime.Title(),
-		},
-	}
+	hal.anime[id] = AnimeToHummingbird(anime)
 
 	change := AddChange{Anime: anime}
 	hal.changes = append(hal.changes, change)
-	return nil
 }
 
-func (hal *HummingbirdAnimeList) Edit(anime Anime) error {
-	oldAnime := hal.anime[anime.ID().Get(Hummingbird)]
+func (hal *HummingbirdAnimeList) Edit(anime Anime) {
+	animeID := anime.ID().Get(Hummingbird)
+	oldAnime := hal.anime[animeID]
+	hal.anime[animeID] = AnimeToHummingbird(anime)
 
 	change := EditChange{
 		OldAnime: oldAnime,
@@ -193,7 +197,6 @@ func (hal *HummingbirdAnimeList) Edit(anime Anime) error {
 	}
 
 	hal.changes = append(hal.changes, change)
-	return nil
 }
 
 func (hal *HummingbirdAnimeList) Get(id int) (Anime, error) {
@@ -203,11 +206,10 @@ func (hal *HummingbirdAnimeList) Get(id int) (Anime, error) {
 	return nil, errors.New(fmt.Sprintf("Anime with ID %d is not in the anime list", id))
 }
 
-func (hal *HummingbirdAnimeList) Remove(anime Anime) error {
+func (hal *HummingbirdAnimeList) Remove(anime Anime) {
 	delete(hal.anime, anime.ID().Get(Hummingbird))
 	change := DeleteChange{Anime: anime}
 	hal.changes = append(hal.changes, change)
-	return nil
 }
 
 func (hal *HummingbirdAnimeList) Push() error {
