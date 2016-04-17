@@ -29,6 +29,7 @@ type LRUMap struct {
 	dict  map[int]*keyValNode
 	front *keyValNode
 	rear  *keyValNode
+	len   int
 }
 
 // NewLRUMap creates a new LRU map
@@ -37,6 +38,7 @@ func NewLRUMap() *LRUMap {
 		dict:  make(map[int]*keyValNode),
 		front: nil,
 		rear:  nil,
+		len:   0,
 	}
 }
 
@@ -77,6 +79,8 @@ func (lru *LRUMap) Add(key int, data interface{}) {
 	newNode := newKeyValNode(key, data)
 	if node, ok := lru.dict[key]; ok {
 		lru.removeFromQueue(node)
+	} else {
+		lru.len++
 	}
 	lru.addToFrontOfQueue(newNode)
 	lru.dict[key] = newNode
@@ -104,15 +108,18 @@ func (lru *LRUMap) Remove(key int) {
 	if node, ok := lru.dict[key]; ok {
 		lru.removeFromQueue(node)
 		delete(lru.dict, key)
+		lru.len--
 	}
 }
 
 // Keys returns an array of indexes from least recently used
 // to most recently used
 func (lru *LRUMap) Keys() []int {
-	var keys []int
+	keys := make([]int, lru.len)
+	i := 0
 	for node := lru.rear; node != nil; node = node.next {
-		keys = append(keys, node.key)
+		keys[i] = node.key
+		i++
 	}
 	return keys
 }

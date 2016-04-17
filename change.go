@@ -161,19 +161,20 @@ func MergeChanges(changes []Change, listType int) []Change {
 		}
 	}
 
-	var newChanges []Change
-	for _, key := range addMap.Keys() {
+	addKeys, editKeys, deleteKeys := addMap.Keys(), editMap.Keys(), deleteMap.Keys()
+	newChanges := make([]Change, len(addKeys)+len(editKeys)+len(deleteKeys))
+	for i, key := range addKeys {
 		anime, _ := addMap.Get(key)
 		change := AddChange{Anime: anime.(Anime)}
-		newChanges = append(newChanges, change)
+		newChanges[i] = change
 	}
-	for _, key := range editMap.Keys() {
+	for i, key := range editKeys {
 		change, _ := editMap.Get(key)
-		newChanges = append(newChanges, change.(Change))
+		newChanges[len(addKeys)+i] = change.(Change)
 	}
-	for _, key := range deleteMap.Keys() {
+	for i, key := range deleteMap.Keys() {
 		change, _ := deleteMap.Get(key)
-		newChanges = append(newChanges, change.(Change))
+		newChanges[len(addKeys)+len(editKeys)+i] = change.(Change)
 	}
 
 	return newChanges

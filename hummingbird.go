@@ -215,14 +215,14 @@ func (hal *HummingbirdAnimeList) Remove(anime Anime) {
 func (hal *HummingbirdAnimeList) Push() error {
 	mergedChanges := MergeChanges(hal.changes, Hummingbird)
 
-	var changeRequests []*http.Request
-	for _, change := range mergedChanges {
+	changeRequests := make([]*http.Request, len(mergedChanges))
+	for i, change := range mergedChanges {
 		request, err := hal.GenerateChange(change)
 		if err != nil {
 			return err
 		}
 
-		changeRequests = append(changeRequests, request)
+		changeRequests[i] = request
 	}
 
 	// sends changes asynchronously
